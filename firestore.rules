@@ -1,0 +1,101 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {phone}
+    // Fields:
+    //   - uid: string (required)
+    //   - shortId: string (required)
+    //   - phone: string (required)
+    //   - password: string (required)
+    //   - displayName: string
+    //   - role: string (required, 'user' or 'admin')
+    //   - trialStartDate: string (ISO date)
+    //   - isActiveUntil: string (ISO date)
+    //   - createdAt: string (ISO date)
+    //
+    // Collection: activationKeys
+    // Document ID: {key}
+    // Fields:
+    //   - key: string (required)
+    //   - isUsed: bool (required)
+    //   - usedBy: string (phone)
+    //   - createdAt: string (ISO date)
+    //   - durationMonths: number
+    //
+    // Collection: stats
+    // Document ID: global
+    // Fields:
+    //   - aiRequestsCount: number
+    //   - lastResetDate: string (ISO date)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      // The app uses custom auth, but we'll allow operations for now.
+      // Ideally, Firebase Auth should be used.
+      return true; 
+    }
+
+    function isAdmin(data) {
+      return data.role == 'admin';
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['phone', 'role', 'shortId', 'uid', 'password']) &&
+             data.phone is string &&
+             data.role in ['user', 'admin'] &&
+             data.shortId is string &&
+             data.password is string &&
+             (data.createdAt == null || data.createdAt is number) &&
+             (data.isActiveUntil == null || data.isActiveUntil is number);
+    }
+
+    function isValidActivationKey(data) {
+      return data.keys().hasAll(['used', 'createdAt']) &&
+             data.used is bool &&
+             data.createdAt is number &&
+             (data.days is number || (data.posts is number && data.scripts is number));
+    }
+
+    function isValidStats(data) {
+      return data.keys().hasAll(['aiRequestsCount']) &&
+             data.aiRequestsCount is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{phone} {
+      allow read: if true;
+      allow create, update: if isValidUser(request.resource.data);
+      allow delete: if true;
+    }
+
+    match /activationKeys/{key} {
+      allow read: if true;
+      allow create, update: if isValidActivationKey(request.resource.data);
+      allow delete: if true;
+    }
+
+    match /stats/{docId} {
+      allow read: if true;
+      allow write: if docId == 'global' && isValidStats(request.resource.data);
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

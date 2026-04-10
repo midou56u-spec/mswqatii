@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مسوقاتي AI</title>
+    <title>مسوقاتي AI - Standalone</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -69,9 +69,7 @@
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             const display = document.getElementById('error-display');
             display.style.display = 'block';
-            let errorMsg = msg;
-            if (error && error.message) errorMsg = error.message;
-            display.innerHTML = `<b>خطأ في البرنامج:</b> ${errorMsg} <br><small>${url}:${lineNo}</small>`;
+            display.innerHTML = `<b>خطأ في البرنامج:</b> ${msg} <br><small>${url}:${lineNo}</small>`;
             return false;
         };
     </script>
@@ -110,7 +108,7 @@
             measurementId: ""
         };
         const firestoreDatabaseId = "ai-studio-6100c38d-0c90-47d2-bd34-dbb846b47b30";
-        const GEMINI_API_KEY = (window.GEMINI_API_KEY && window.GEMINI_API_KEY !== "undefined" && window.GEMINI_API_KEY !== "null") ? window.GEMINI_API_KEY : "AIzaSyBcFY_4bq5HWWAeN3aNU4fFWA7P8_LJ-RQ";
+        const GEMINI_API_KEY = "AIzaSyBcFY_4bq5HWWAeN3aNU4fFWA7P8_LJ-RQ";
 
         // Initialize Firebase
         console.log("Initializing Firebase and AI...");
@@ -119,11 +117,8 @@
         
         let ai = null;
         try {
-            const finalKey = (GEMINI_API_KEY && GEMINI_API_KEY.trim() !== "" && GEMINI_API_KEY !== "YOUR_KEY_HERE" && GEMINI_API_KEY !== "undefined" && GEMINI_API_KEY !== "null") ? GEMINI_API_KEY : null;
-            if (finalKey) {
-                ai = new GoogleGenAI({ apiKey: finalKey });
-            } else {
-                console.warn("Gemini API Key is missing or invalid. AI features will be disabled until a key is provided.");
+            if (GEMINI_API_KEY && GEMINI_API_KEY.trim() !== "" && GEMINI_API_KEY !== "YOUR_KEY_HERE") {
+                ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
             }
         } catch (e) {
             console.error("AI Init Error:", e);
@@ -304,12 +299,6 @@
                 }
 
                 setGenerating(true); setError(null);
-                
-                if (!ai) {
-                    setGenerating(false);
-                    return setError('مفتاح Gemini مش موجود. لو رفعت الموقع على GitHub، لازم تضيف المفتاح في الكود أو تستخدم Environment Variables.');
-                }
-
                 const systemPrompt = isTikTok 
                     ? `أنت خبير صناعة محتوى تيك توك (TikTok Creator) مصري محترف وعالمي. مهمتك كتابة 3 نماذج لسكربتات فيديو تيك توك "تريند" واحترافية جداً بالعامية المصرية الراقية.
 السكربت لازم يكون متقسم بوضوح كأنك مخرج سينمائي:
